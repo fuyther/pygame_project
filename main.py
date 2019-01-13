@@ -5,16 +5,16 @@ import math
 
 class World:
     def __init__(self, typ="standard"):
-        self.table = np.zeros(10000, dtype=int)
-        self.table[5000:] = np.ones(5000, dtype=int)
-        self.table = self.table.reshape(100, 100)
+        self.table = np.zeros(1000000, dtype=int)
+        self.table[500000:] = np.ones(500000, dtype=int)
+        self.table = self.table.reshape(1000, 1000)
         self.lst_objects = []
-        self.border = self.table[int(50 - (360 + 15) / 20): int(50 + (360 - 15) / 20),
-                                 int(50 - 640 / 20): int(50 + 640 / 20)]
+        self.border = self.table[int(500 - (360 + 15) / 20)//1: int(500 + (360 - 15) / 20)//1,
+                                 int(500 - 640 / 20)//1: int(500 + 640 / 20)//1]
 
     def update(self, x, y):
-        self.border = self.table[int(50 - (360 + 15) / 20 - y/20): int(50 + (360 - 15) / 20 - y/20),
-                                 int(x/20 + 50 - 640 / 20): int(x/20 + 50 + 640 / 20)]
+        self.border = self.table[int(500 - (360 + 15) / 20 - y/20)//1: int(500 + (360 - 15) / 20 - y/20)//1,
+                                 int(x/20 + 500 - 640 / 20)//1: int(x/20 + 500 + 640 / 20)//1]
 
     def append(self, obj):
         self.lst_objects.append(obj)
@@ -61,16 +61,19 @@ world1 = World()
 world1.append(main_char)
 running = True
 while running:
-    if world1.table[50-ov_mod(main_char.y / 20)][int(main_char.x / 20) + 50] == 1:
-        main_char.status = "on_ground"
-        main_char.a_v = 0
-        main_char.v_v = 0
-        main_char.hp -= main_char.v_v // 40
-        if main_char.hp < 0:
-            main_char.hp = 0
-    elif world1.table[50-ov_mod(main_char.y / 20)][int(main_char.x / 20) + 50] == 0:
-        main_char.status = "in_air"
-        main_char.a_v = 0 - 9.8 * 20
+    try:
+        if world1.table[500 - ov_mod(main_char.y / 20)][int(main_char.x / 20) + 500] == 1:
+            main_char.status = "on_ground"
+            main_char.a_v = 0
+            main_char.v_v = 0
+            main_char.hp -= main_char.v_v // 40
+            if main_char.hp < 0:
+                main_char.hp = 0
+        elif world1.table[500 - ov_mod(main_char.y / 20)][int(main_char.x / 20) + 500] == 0:
+            main_char.status = "in_air"
+            main_char.a_v = 0 - 9.8 * 20
+    except IndexError:
+        pass
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -89,32 +92,35 @@ while running:
             if event.key == pygame.K_a:
                 main_char.v_h = 0
                 main_char.a_h = 0
-    if main_char.a_h != 0 or main_char.v_h != 0:
-        if abs(main_char.v_h) >= 800:
-            pass
-        else:
-            main_char.v_h = main_char.v_h + main_char.a_h * clock.get_time()/1000
-        main_char.x = main_char.x + main_char.v_h * clock.get_time()/1000 +\
-            (main_char.a_h * ((clock.get_time()/1000) ** 2)) / 2
-        world1.update(main_char.x, main_char.y)
-    if main_char.a_v != 0 or main_char.v_v != 0:
-        if abs(main_char.v_v) >= 800:
-            pass
-        else:
-            main_char.v_v = main_char.v_v + main_char.a_v * clock.get_time() / 1000
-        main_char.y = main_char.y + main_char.v_v * clock.get_time() / 1000 + \
-            (main_char.a_v * ((clock.get_time() / 1000) ** 2)) / 2
-        world1.update(main_char.x, main_char.y)
+    try:
+        if main_char.a_h != 0 or main_char.v_h != 0:
+            if abs(main_char.v_h) >= 800:
+                pass
+            else:
+                main_char.v_h = main_char.v_h + main_char.a_h * clock.get_time()/1000
+            main_char.x = main_char.x + main_char.v_h * clock.get_time()/1000 +\
+                (main_char.a_h * ((clock.get_time()/1000) ** 2)) / 2
+            world1.update(main_char.x, main_char.y)
+        if main_char.a_v != 0 or main_char.v_v != 0:
+            if abs(main_char.v_v) >= 800:
+                pass
+            else:
+                main_char.v_v = main_char.v_v + main_char.a_v * clock.get_time() / 1000
+            main_char.y = main_char.y + main_char.v_v * clock.get_time() / 1000 + \
+                (main_char.a_v * ((clock.get_time() / 1000) ** 2)) / 2
+            world1.update(main_char.x, main_char.y)
+    except IndexError:
+        pass
     w, h = pygame.display.get_surface().get_size()
     ch_w = main_char.weight
     ch_h = main_char.height
     for index, row in enumerate(world1.border):
         for jandex, block in enumerate(row):
             if block == 1:
-                pygame.draw.rect(screen, pygame.Color("dark green"), (main_char.x // 1 + jandex * 20, (main_char.y // 1 + index * 20), 20, 20))
+                pygame.draw.rect(screen, pygame.Color("dark green"), ((main_char.x % 20) + jandex * 20, ((main_char.y % 20) + index * 20), 20, 20))
             else:
-                pygame.draw.rect(screen, pygame.Color("light blue"), (main_char.x // 1 + jandex * 20, (main_char.y // 1 + index * 20), 20, 20))
-            pygame.draw.rect(screen, pygame.Color("black"), (main_char.x // 1 + jandex * 20, (main_char.y // 1 + index * 20), 20, 20), 1)
+                pygame.draw.rect(screen, pygame.Color("light blue"), ((main_char.x % 20) + jandex * 20, ((main_char.y % 20) + index * 20), 20, 20))
+            pygame.draw.rect(screen, pygame.Color("black"), ((main_char.x % 20) + jandex * 20, ((main_char.y % 20) + index * 20), 20, 20), 1)
     pygame.draw.rect(screen, main_char.color, (w // 2 - ch_w // 2, h // 2 - ch_h // 2, ch_w, ch_h))
     pygame.display.flip()
     print(clock.get_time(), main_char.y, main_char.x, main_char.v_v, main_char.v_h, main_char.a_v, main_char.status)
