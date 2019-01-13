@@ -9,12 +9,12 @@ class World:
         self.table[500000:] = np.ones(500000, dtype=int)
         self.table = self.table.reshape(1000, 1000)
         self.lst_objects = []
-        self.border = self.table[int(500 - (360 + 15) / 20)//1: int(500 + (360 - 15) / 20)//1,
-                                 int(500 - 640 / 20)//1: int(500 + 640 / 20)//1]
+        self.border = self.table[ov_mod(500 - (360 + 20) / 20)//1: ov_mod(500 + (360 - 20) / 20)//1,
+                                 ov_mod(500 - 640 / 20)//1: ov_mod(500 + 640 / 20)//1]
 
     def update(self, x, y):
-        self.border = self.table[int(500 - (360 + 15) / 20 - y/20)//1: int(500 + (360 - 15) / 20 - y/20)//1,
-                                 int(x/20 + 500 - 640 / 20)//1: int(x/20 + 500 + 640 / 20)//1]
+        self.border = self.table[ov_mod(500 - (360 + 15) / 20 - y/20): ov_mod(500 + (360 - 15) / 20 - y/20),
+                                 ov_mod(x/20 + 500 - 640 / 20): ov_mod(x/20 + 500 + 640 / 20)]
 
     def append(self, obj):
         self.lst_objects.append(obj)
@@ -42,6 +42,7 @@ class Character(Object):
 
 
 def ov_mod(n):
+    # функция получения модуля с избытком вида ov_mod(1.1) = 2
     if n // 1 == n:
         return int(n)
     else:
@@ -117,12 +118,12 @@ while running:
     for index, row in enumerate(world1.border):
         for jandex, block in enumerate(row):
             if block == 1:
-                pygame.draw.rect(screen, pygame.Color("dark green"), ((main_char.x % 20) + jandex * 20, ((main_char.y % 20) + index * 20), 20, 20))
+                pygame.draw.rect(screen, pygame.Color("dark green"), ((-main_char.x % 20) + jandex * 20, ((main_char.y % 20) + index * 20), 20, 20))
             else:
-                pygame.draw.rect(screen, pygame.Color("light blue"), ((main_char.x % 20) + jandex * 20, ((main_char.y % 20) + index * 20), 20, 20))
-            pygame.draw.rect(screen, pygame.Color("black"), ((main_char.x % 20) + jandex * 20, ((main_char.y % 20) + index * 20), 20, 20), 1)
+                pygame.draw.rect(screen, pygame.Color("light blue"), ((-main_char.x % 20) + jandex * 20, ((main_char.y % 20) + index * 20), 20, 20))
+            pygame.draw.rect(screen, pygame.Color("black"), ((-main_char.x % 20) + jandex * 20, ((main_char.y % 20) + index * 20), 20, 20), 1)
     pygame.draw.rect(screen, main_char.color, (w // 2 - ch_w // 2, h // 2 - ch_h // 2, ch_w, ch_h))
     pygame.display.flip()
-    print(clock.get_time(), main_char.y, main_char.x, main_char.v_v, main_char.v_h, main_char.a_v, main_char.status)
+    print(clock.get_time(), main_char.y, main_char.x, main_char.v_v, main_char.v_h, main_char.a_v, main_char.status, main_char.hp)
     clock.tick(60)
 pygame.quit()
