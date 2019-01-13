@@ -1,6 +1,5 @@
 import pygame
 import numpy as np
-import math
 
 
 class World:
@@ -9,12 +8,12 @@ class World:
         self.table[500000:] = np.ones(500000, dtype=int)
         self.table = self.table.reshape(1000, 1000)
         self.lst_objects = []
-        self.border = self.table[ov_mod(500 - (360 + 20) / 20)//1: ov_mod(500 + (360 - 20) / 20)//1,
-                                 ov_mod(500 - 640 / 20)//1: ov_mod(500 + 640 / 20)//1]
+        self.border = self.table[int(500 - (360 + 20) / 20)//1: int(500 + (360 - 20) / 20)//1,  # Та часть мира которая будет прорисововатся
+                                 int(500 - 640 / 20)//1: int(500 + 640 / 20)//1]
 
     def update(self, x, y):
-        self.border = self.table[ov_mod(500 - (360 + 15) / 20 - y/20): ov_mod(500 + (360 - 15) / 20 - y/20),
-                                 ov_mod(x/20 + 500 - 640 / 20): ov_mod(x/20 + 500 + 640 / 20)]
+        self.border = self.table[int(int(500 - (360 + 20) / 20)//1 - y//20): int(int(500 + (360 - 20) / 20)//1 - y//20),  # Ее изменение
+                                 int(x//20+int(500 - 640 / 20)//1): int(x//20+int(500 + 640 / 20)//1)]
 
     def append(self, obj):
         self.lst_objects.append(obj)
@@ -61,6 +60,7 @@ screen.fill((255, 255, 255))
 world1 = World()
 world1.append(main_char)
 running = True
+world1.table[500][500] = 2
 while running:
     try:
         if world1.table[500 - ov_mod(main_char.y / 20)][int(main_char.x / 20) + 500] == 1:
@@ -119,8 +119,11 @@ while running:
         for jandex, block in enumerate(row):
             if block == 1:
                 pygame.draw.rect(screen, pygame.Color("dark green"), ((-main_char.x % 20) + jandex * 20, ((main_char.y % 20) + index * 20), 20, 20))
-            else:
+            elif block == 0:
                 pygame.draw.rect(screen, pygame.Color("light blue"), ((-main_char.x % 20) + jandex * 20, ((main_char.y % 20) + index * 20), 20, 20))
+            else:
+                pygame.draw.rect(screen, pygame.Color("red"),
+                                 ((-main_char.x % 20) + jandex * 20, ((main_char.y % 20) + index * 20), 20, 20))
             pygame.draw.rect(screen, pygame.Color("black"), ((-main_char.x % 20) + jandex * 20, ((main_char.y % 20) + index * 20), 20, 20), 1)
     pygame.draw.rect(screen, main_char.color, (w // 2 - ch_w // 2, h // 2 - ch_h // 2, ch_w, ch_h))
     pygame.display.flip()
