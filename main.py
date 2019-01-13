@@ -1,5 +1,6 @@
 import pygame
 import numpy as np
+import math
 
 
 class World:
@@ -8,6 +9,12 @@ class World:
         self.table[5000:] = np.ones(5000, dtype=int)
         self.table = self.table.reshape(100, 100)
         self.lst_objects = []
+        self.border = self.table[int(50 - (360 + 15) / 20): int(50 + (360 - 15) / 20),
+                                 int(50 - 640 / 20): int(50 + 640 / 20)]
+
+    def update(self, x, y):
+        self.border = self.table[int(50 - (360 + 15) / 20 - y/20): int(50 + (360 - 15) / 20 - y/20),
+                                 int(x/20 + 50 - 640 / 20): int(x/20 + 50 + 640 / 20)]
 
     def append(self, obj):
         self.lst_objects.append(obj)
@@ -18,11 +25,9 @@ class Object:
         self.x = x
         self.y = y
         self.v_v = 0
+        self.a_h = 0
+        self.a_v = 0
         self.v_h = 0
-
-    def fall(self):
-        self.y = self.v_v * (1 / 60) + (9.8 * (1 / 60) ** 2) / 2
-        self.v_v = self.v_v - 9.8 * 20 * (1 / 60)
 
 
 class Character(Object):
@@ -36,6 +41,16 @@ class Character(Object):
         self.status = "in_air"
 
 
+def ov_mod(n):
+    if n // 1 == n:
+        return int(n)
+    else:
+        if n < 0:
+            return int(n // 1) - 1
+        else:
+            return int(n // 1) + 1
+
+
 pygame.init()
 screen = pygame.display.set_mode((1280, 720))
 screen.fill((0, 0, 0))
@@ -46,20 +61,62 @@ world1 = World()
 world1.append(main_char)
 running = True
 while running:
-    if pygame.event.wait().type == pygame.QUIT:
-        running = False
+    if world1.table[50-ov_mod(main_char.y / 20)][int(main_char.x / 20) + 50] == 1:
+        main_char.status = "on_ground"
+        main_char.a_v = 0
+        main_char.v_v = 0
+        main_char.hp -= main_char.v_v // 40
+        if main_char.hp < 0:
+            main_char.hp = 0
+    elif world1.table[50-ov_mod(main_char.y / 20)][int(main_char.x / 20) + 50] == 0:
+        main_char.status = "in_air"
+        main_char.a_v = 0 - 9.8 * 20
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_d:
+                main_char.a_h = 100
+            if event.key == pygame.K_a:
+                main_char.a_h = -100
+            if event.key == pygame.K_SPACE:
+                if main_char.status == "on_ground":
+                    main_char.v_v = 200
+        if event.type == pygame.KEYUP:
+            if event.key == pygame.K_d:
+                main_char.v_h = 0
+                main_char.a_h = 0
+            if event.key == pygame.K_a:
+                main_char.v_h = 0
+                main_char.a_h = 0
+    if main_char.a_h != 0 or main_char.v_h != 0:
+        if abs(main_char.v_h) >= 800:
+            pass
+        else:
+            main_char.v_h = main_char.v_h + main_char.a_h * clock.get_time()/1000
+        main_char.x = main_char.x + main_char.v_h * clock.get_time()/1000 +\
+            (main_char.a_h * ((clock.get_time()/1000) ** 2)) / 2
+        world1.update(main_char.x, main_char.y)
+    if main_char.a_v != 0 or main_char.v_v != 0:
+        if abs(main_char.v_v) >= 800:
+            pass
+        else:
+            main_char.v_v = main_char.v_v + main_char.a_v * clock.get_time() / 1000
+        main_char.y = main_char.y + main_char.v_v * clock.get_time() / 1000 + \
+            (main_char.a_v * ((clock.get_time() / 1000) ** 2)) / 2
+        world1.update(main_char.x, main_char.y)
     w, h = pygame.display.get_surface().get_size()
     ch_w = main_char.weight
     ch_h = main_char.height
-    if main_char.status == "in_air":
-        if world1.table[int(main_char.y) + 50, int(main_char.x) + 50] == 1:
-            main_char.status = "on_ground"
-            main_char.hp -= main_char.v_v // 40
-            if main_char.hp < 0:
-                main_char.hp = 0
-        else:
-            main_char.fall()
+    for index, row in enumerate(world1.border):
+        for jandex, block in enumerate(row):
+            if block == 1:
+                pygame.draw.rect(screen, pygame.Color("dark green"), (main_char.x // 1 + jandex * 20, (main_char.y // 1 + index * 20), 20, 20))
+            else:
+                pygame.draw.rect(screen, pygame.Color("light blue"), (main_char.x // 1 + jandex * 20, (main_char.y // 1 + index * 20), 20, 20))
+            pygame.draw.rect(screen, pygame.Color("black"), (main_char.x // 1 + jandex * 20, (main_char.y // 1 + index * 20), 20, 20), 1)
     pygame.draw.rect(screen, main_char.color, (w // 2 - ch_w // 2, h // 2 - ch_h // 2, ch_w, ch_h))
     pygame.display.flip()
+    print(clock.get_time(), main_char.y, main_char.x, main_char.v_v, main_char.v_h, main_char.a_v, main_char.status)
     clock.tick(60)
 pygame.quit()
