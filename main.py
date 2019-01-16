@@ -106,6 +106,10 @@ while running:
             if event.key == pygame.K_a:
                 main_char.v_h = 0
                 main_char.a_h = 0
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            cell = int(500 - 360 / 20) // 1 + int(event.pos[1] / 20), int(event.pos[0]/20) + int(500 - 640 / 20)//1
+            if world1.table[cell[0], cell[1]] == 0:
+                world1.table[cell[0], cell[1]] = 1
     try:
         if main_char.a_h != 0 or main_char.v_h != 0:
             # ограничение в скорости 40 метров в секунду или 800 пикселей в с
