@@ -7,22 +7,10 @@ class World:
         self.table = np.zeros(1000000, dtype=int)  # заполняем воздухом
         self.table[500000:] = np.ones(500000, dtype=int)  # добавляем землю
         self.table = self.table.reshape(1000, 1000)  # превращаем ее в двумерный массив
-        self.lst_objects = []  # на будущее
-        self.border = self.table[
-                      int(500 - (360 + 20) / 20) // 1: int(500 + (360 - 20) / 20) // 1,
-                      # Та часть мира которая будет прорисововатся
-                      int(500 - 640 / 20)//1: int(500 + 640 / 20)//1
-                      ]
+        self.lst_objects = {}  # на будущее
 
-    def update(self, x, y):
-        self.border = self.table[
-                      int(int(500 - (360 + 20) / 20) // 1 - y // 20): int(int(500 + (360 - 20) / 20) // 1 - y // 20),
-                      # Ее изменение
-                      int(x//20+int(500 - 640 / 20)//1): int(x//20+int(500 + 640 / 20)//1)
-                      ]
-
-    def append(self, obj):
-        self.lst_objects.append(obj)
+    def append(self, key, obj):
+        self.lst_objects[key] = obj
 
 
 class Object:
@@ -65,24 +53,25 @@ main_char = Character(0, 0)
 clock = pygame.time.Clock()
 screen.fill((255, 255, 255))
 world1 = World()
-world1.append(main_char)
+world1.append("main_char", (main_char, main_char.x + 500*20, - main_char.y + 500*20))
 running = True
 world1.table[500][500] = 2
 # запуск
 while running:
+    screen.fill((0, 0, 0))
     # проверка на то что игрок стоит на земле или же в воздухе
     try:
-        if world1.table[500 - ov_mod(main_char.y / 20)][int(main_char.x / 20) + 500] == 1:
+        if world1.table[500 - int(main_char.y / 20)][ov_mod(main_char.x / 20) + 500] == 1:
             main_char.status = "on_ground"
             main_char.a_v = 0
             main_char.v_v = 0
             main_char.hp -= main_char.v_v // 40
             if main_char.hp < 0:
                 main_char.hp = 0
-        elif world1.table[500 - ov_mod(main_char.y / 20)][int(main_char.x / 20) + 500] == 0:
+        elif world1.table[500 - ov_mod(main_char.y / 20)][ov_mod(main_char.x / 20) + 500] == 0:
             main_char.status = "in_air"
             # его вертикальное ускорение = g
-            main_char.a_v = 0 - 9.8 * 20
+            main_char.a_v = 0 - 9.8 * 30
     except IndexError:
         pass
     for event in pygame.event.get():
@@ -107,9 +96,9 @@ while running:
                 main_char.v_h = 0
                 main_char.a_h = 0
         if event.type == pygame.MOUSEBUTTONDOWN:
-            cell = int(500 - 360 / 20) // 1 + int(event.pos[1] / 20), int(event.pos[0]/20) + int(500 - 640 / 20)//1
-            if world1.table[cell[0], cell[1]] == 0:
-                world1.table[cell[0], cell[1]] = 1
+            cell = ov_mod(world1.lst_objects["main_char"][1] + event.pos[0] - 640)//20, ov_mod(world1.lst_objects["main_char"][2] + event.pos[1] - 360)//20
+            if world1.table[cell[1], cell[0]] == 0:
+                world1.table[cell[1], cell[0]] = 1
     try:
         if main_char.a_h != 0 or main_char.v_h != 0:
             # ограничение в скорости 40 метров в секунду или 800 пикселей в с
@@ -121,8 +110,6 @@ while running:
             # уравнение горизонтальной скорости
             main_char.x = main_char.x + main_char.v_h * clock.get_time()/1000 +\
                 (main_char.a_h * ((clock.get_time()/1000) ** 2)) / 2
-            # изменение границ мира
-            world1.update(main_char.x, main_char.y)
         # тоже самое только для вертикальной оси
         if main_char.a_v != 0 or main_char.v_v != 0:
             if abs(main_char.v_v) >= 800:
@@ -131,7 +118,7 @@ while running:
                 main_char.v_v = main_char.v_v + main_char.a_v * clock.get_time() / 1000
             main_char.y = main_char.y + main_char.v_v * clock.get_time() / 1000 + \
                 (main_char.a_v * ((clock.get_time() / 1000) ** 2)) / 2
-            world1.update(main_char.x, main_char.y)
+        world1.lst_objects["main_char"] = (main_char, main_char.x + 500*20, - main_char.y + 500*20)
     except IndexError:
         pass
     # для упрошения кода
@@ -139,19 +126,20 @@ while running:
     ch_w = main_char.weight
     ch_h = main_char.height
     # прорисовка мира
-    for index, row in enumerate(world1.border):
-        for jandex, block in enumerate(row):
-            if block == 1:
-                pygame.draw.rect(screen, pygame.Color("dark green"),
-                                 ((-main_char.x % 20) + jandex * 20, ((main_char.y % 20) + index * 20), 20, 20))
-            elif block == 0:
+    for i in range(38):
+        for j in range(66):
+            cell = world1.table[ov_mod(world1.lst_objects["main_char"][2] / 20) + (i - 19)][
+                ov_mod(world1.lst_objects["main_char"][1] / 20) + (j - 33)]
+            if cell == 1:
+                pygame.draw.rect(screen, pygame.Color("dark green"), (int((j - 1)*20 - main_char.x % 20), int((i - 1)*20 + main_char.y % 20), 20, 20))
+            elif cell == 2:
+                pygame.draw.rect(screen, (255, 0, 0),
+                                 (int((j - 1) * 20 - main_char.x % 20), int((i - 1) * 20 + main_char.y % 20), 20, 20))
+            else:
                 pygame.draw.rect(screen, pygame.Color("light blue"),
-                                 ((-main_char.x % 20) + jandex * 20, ((main_char.y % 20) + index * 20), 20, 20))
-            else:  # это было сделано для того чтоб понимать если что то будет не так с первой и следюующим кадром
-                pygame.draw.rect(screen, pygame.Color("red"),
-                                 ((-main_char.x % 20) + jandex * 20, ((main_char.y % 20) + index * 20), 20, 20))
-            pygame.draw.rect(screen, pygame.Color("black"),
-                             ((-main_char.x % 20) + jandex * 20, ((main_char.y % 20) + index * 20), 20, 20), 1)
+                                 (int((j - 1) * 20 - main_char.x % 20), int((i - 1) * 20 + main_char.y % 20), 20, 20))
+            pygame.draw.rect(screen, (0, 0, 0),
+                             (int((j - 1) * 20 - main_char.x % 20), int((i - 1) * 20 + main_char.y % 20), 20, 20), 1)
     # отрисовка персонажа
     pygame.draw.rect(screen, main_char.color, (w // 2 - ch_w // 2, h // 2 - ch_h // 2, ch_w, ch_h))
     pygame.display.flip()
