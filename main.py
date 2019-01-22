@@ -55,20 +55,20 @@ screen.fill((255, 255, 255))
 world1 = World()
 world1.append("main_char", (main_char, main_char.x + 500*20, - main_char.y + 500*20))
 running = True
-world1.table[500][500] = 2
+world1.table[500][490:501] = 2
 # запуск
 while running:
     screen.fill((0, 0, 0))
     # проверка на то что игрок стоит на земле или же в воздухе
     try:
-        if world1.table[500 - int(main_char.y / 20)][ov_mod(main_char.x / 20) + 500] == 1:
+        if world1.table[500 - int(main_char.y / 20)][int(main_char.x / 20) + 500] == 1:
             main_char.status = "on_ground"
             main_char.a_v = 0
             main_char.v_v = 0
             main_char.hp -= main_char.v_v // 40
             if main_char.hp < 0:
                 main_char.hp = 0
-        elif world1.table[500 - ov_mod(main_char.y / 20)][ov_mod(main_char.x / 20) + 500] == 0:
+        elif world1.table[500 - ov_mod(main_char.y / 20)][int(main_char.x / 20) + 500] == 0:
             main_char.status = "in_air"
             # его вертикальное ускорение = g
             main_char.a_v = 0 - 9.8 * 30
@@ -96,7 +96,7 @@ while running:
                 main_char.v_h = 0
                 main_char.a_h = 0
         if event.type == pygame.MOUSEBUTTONDOWN:
-            cell = ov_mod(world1.lst_objects["main_char"][1] + event.pos[0] - 640)//20, ov_mod(world1.lst_objects["main_char"][2] + event.pos[1] - 360)//20
+            cell = int(world1.lst_objects["main_char"][1] + event.pos[0] - 640)//20, int(world1.lst_objects["main_char"][2] + event.pos[1] - 360)//20
             if world1.table[cell[1], cell[0]] == 0:
                 world1.table[cell[1], cell[0]] = 1
     try:
@@ -129,7 +129,7 @@ while running:
     for i in range(38):
         for j in range(66):
             cell = world1.table[ov_mod(world1.lst_objects["main_char"][2] / 20) + (i - 19)][
-                ov_mod(world1.lst_objects["main_char"][1] / 20) + (j - 33)]
+                int(world1.lst_objects["main_char"][1] / 20) + (j - 33)]
             if cell == 1:
                 pygame.draw.rect(screen, pygame.Color("dark green"), (int((j - 1)*20 - main_char.x % 20), int((i - 1)*20 + main_char.y % 20), 20, 20))
             elif cell == 2:
