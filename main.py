@@ -1,5 +1,6 @@
 import pygame
 import numpy as np
+import os
 
 
 class World:
@@ -13,8 +14,9 @@ class World:
         self.lst_objects[key] = obj
 
 
-class Object:
+class Object(pygame.sprite.Sprite):
     def __init__(self, x, y):
+        super().__init__(all_sprites)
         self.x = x
         self.y = y
         self.v_v = 0
@@ -45,10 +47,31 @@ def ov_mod(n):
             return int(n // 1) + 1
 
 
+def load_image(name, colorkey=None):
+    fullname = os.path.join('data', name)
+    try:
+        image = pygame.image.load(fullname)
+        image = image.convert_alpha()
+        if colorkey is not None:
+            if colorkey is -1:
+                colorkey = image.get_at((0, 0))
+            image.set_colorkey(colorkey)
+        return image
+    except pygame.error as message:
+        print('Cannot load image:', name)
+        raise SystemExit(message)
+
+
 # создание мира
 pygame.init()
 screen = pygame.display.set_mode((1280, 720))
+objects = {
+    0: load_image("air.png"),
+    1: load_image("dirt.png")
+}
+character = load_image("char.png")
 screen.fill((0, 0, 0))
+all_sprites = pygame.sprite.Group()
 main_char = Character(0, 0)
 clock = pygame.time.Clock()
 screen.fill((255, 255, 255))
@@ -61,14 +84,14 @@ while running:
     screen.fill((0, 0, 0))
     # проверка на то что игрок стоит на земле или же в воздухе
     try:
-        if world1.table[500 - int(main_char.y / 20)][int(main_char.x / 20) + 500] == 1:
+        if world1.table[500 - int(main_char.y // 20)][int(main_char.x // 20) + 500] == 1:
             main_char.status = "on_ground"
             main_char.a_v = 0
             main_char.v_v = 0
             main_char.hp -= main_char.v_v // 40
             if main_char.hp < 0:
                 main_char.hp = 0
-        elif world1.table[500 - ov_mod(main_char.y / 20)][int(main_char.x / 20) + 500] == 0:
+        elif world1.table[500 - int(main_char.y // 20)][int(main_char.x // 20) + 500] == 0:
             main_char.status = "in_air"
             # его вертикальное ускорение = g
             main_char.a_v = 0 - 9.8 * 30
@@ -131,17 +154,11 @@ while running:
             cell = world1.table[ov_mod(world1.lst_objects["main_char"][2] / 20) + (i - 19)][
                 int(world1.lst_objects["main_char"][1] / 20) + (j - 33)]
             if cell == 1:
-                pygame.draw.rect(screen, pygame.Color("dark green"), (int((j - 1)*20 - main_char.x % 20), int((i - 1)*20 + main_char.y % 20), 20, 20))
-            elif cell == 2:
-                pygame.draw.rect(screen, (255, 0, 0),
-                                 (int((j - 1) * 20 - main_char.x % 20), int((i - 1) * 20 + main_char.y % 20), 20, 20))
+                screen.blit(objects[1], (int((j - 1)*20 - main_char.x % 20), int((i - 1)*20 + main_char.y % 20)))
             else:
-                pygame.draw.rect(screen, pygame.Color("light blue"),
-                                 (int((j - 1) * 20 - main_char.x % 20), int((i - 1) * 20 + main_char.y % 20), 20, 20))
-            pygame.draw.rect(screen, (0, 0, 0),
-                             (int((j - 1) * 20 - main_char.x % 20), int((i - 1) * 20 + main_char.y % 20), 20, 20), 1)
+                screen.blit(objects[0], (int((j - 1) * 20 - main_char.x % 20), int((i - 1) * 20 + main_char.y % 20)))
     # отрисовка персонажа
-    pygame.draw.rect(screen, main_char.color, (w // 2 - ch_w // 2, h // 2 - ch_h // 2, ch_w, ch_h))
+        screen.blit(character, (w // 2 - ch_w // 2, h // 2 - ch_h // 2))
     pygame.display.flip()
     # лог для проверки достоверности того что мы видем
     print(clock.get_time(), main_char.y, main_char.x, main_char.v_v, main_char.v_h, main_char.a_v, main_char.status,
