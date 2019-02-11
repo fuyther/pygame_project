@@ -76,6 +76,25 @@ class Inventory:
             if self.equipped == i:
                 pygame.draw.rect(scren, (255, 255, 255), (320 + i * 80, 640, 80, 80), 10)
 
+    def open(self):
+        pass
+
+    def close(self):
+        pass
+
+
+class Button(pygame.sprite.Sprite):
+    def __init__(self, text, direct, x ,y, screen):
+        super().__init__(all_sprites)
+        self.image = pygame.transform.scale(load_image("button.png"), (200, 50))
+        font = pygame.font.Font(None, 30)
+        self.text_surface = font.render(text, 1, pygame.Color("white"))
+        rect = self.text_surface.get_rect()
+        self.rect = self.image.get_rect()
+        self.image.blit(self.text_surface, ((self.rect.width - rect.width)//2, (self.rect.height - rect.height)//2))
+        self.rect.x = x
+        self.rect.y = y
+
 
 # создание мира
 pygame.init()
@@ -96,6 +115,7 @@ screen.fill((0, 0, 0))
 all_sprites = pygame.sprite.Group()
 main_char = Character(2, 2)
 clock = pygame.time.Clock()
+button = Button("button", "", 640, 360, screen)
 screen.fill((255, 255, 255))
 world1 = World()
 world1.append("main_char", (main_char, main_char.x + 500*20, - main_char.y + 500*20))
@@ -211,7 +231,9 @@ while running:
                 int(world1.lst_objects["main_char"][1] / 20) + (j - 33)]
             screen.blit(objects[cell], (int((j - 1)*20 - main_char.x % 20), int((i - 1)*20 + main_char.y % 20)))
     # отрисовка персонажа
-        screen.blit(character, (w // 2 - ch_w // 2, h // 2 - ch_h // 2))
+    screen.blit(button.image, button.rect)
+    screen.blit(character, (w // 2 - ch_w // 2, h // 2 - ch_h // 2))
+
     inventory.draw(scren=screen)
     pygame.display.flip()
     # лог для проверки достоверности того что мы видем
