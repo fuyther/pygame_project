@@ -30,6 +30,7 @@ class Character(Object):
     def __init__(self, x, y):
         super(Character, self).__init__(x, y)
         self.hp = 10
+        self.hunger = 10
         self.height = 30
         self.weight = 10
         self.color = (245, 245, 220)
@@ -64,9 +65,15 @@ def load_image(name, colorkey=None):
 
 
 class Inventory:
-    def __init__(self):
+    def __init__(self, character):
+        self.char = character
         self.lst = [_ for _ in range(1, 9)]
         self.equipped = 0
+        self.opened = False
+        self.image = load_image("inventory.png")
+        self.rect = self.image.get_rect()
+        self.rect.x = (1280 - 800)/2
+        self.rect.y = (720 - 700)/2
 
     def draw(self, scren):
         for i in range(len(self.lst)):
@@ -75,12 +82,16 @@ class Inventory:
             pygame.draw.rect(scren, (255, 255, 255), (320 + i * 80, 640, 80, 80), 3)
             if self.equipped == i:
                 pygame.draw.rect(scren, (255, 255, 255), (320 + i * 80, 640, 80, 80), 10)
+        if self.opened:
+            scren.blit(self.image, self.rect)
+            pygame.draw.rect(scren, pygame.Color("red"), (286, 66, int(300 * (self.char.hp / 10)), 20))
+            pygame.draw.rect(scren, pygame.Color("orange"), (286, 105, int(300 * (self.char.hunger / 10)), 20))
 
     def open(self):
-        pass
+        self.opened = True
 
     def close(self):
-        pass
+        self.opened = False
 
 
 class Button(pygame.sprite.Sprite):
@@ -115,12 +126,11 @@ screen.fill((0, 0, 0))
 all_sprites = pygame.sprite.Group()
 main_char = Character(2, 2)
 clock = pygame.time.Clock()
-button = Button("button", "", 640, 360, screen)
 screen.fill((255, 255, 255))
 world1 = World()
 world1.append("main_char", (main_char, main_char.x + 500*20, - main_char.y + 500*20))
 running = True
-inventory = Inventory()
+inventory = Inventory(main_char)
 # для упрошения кода
 w, h = pygame.display.get_surface().get_size()
 ch_w = main_char.weight
@@ -163,6 +173,11 @@ while running:
                 inventory.equipped = 6
             elif event.key == pygame.K_8:
                 inventory.equipped = 7
+            elif event.key == pygame.K_e:
+                if inventory.opened:
+                    inventory.close()
+                else:
+                    inventory.open()
         if event.type == pygame.KEYUP:
             # при отжатии в горизонтальные переменные = 0
             if event.key == pygame.K_d:
@@ -172,11 +187,12 @@ while running:
                 main_char.v_h = 0
                 main_char.a_h = 0
         if event.type == pygame.MOUSEBUTTONDOWN:
-            cell = int(world1.lst_objects["main_char"][1] + event.pos[0] - 640)//20, int(world1.lst_objects["main_char"][2] + event.pos[1] - 360)//20
-            if event.button == 1:
-                world1.table[cell[1], cell[0]] = 0
-            elif event.button == 3:
-                world1.table[cell[1], cell[0]] = inventory.equipped + 1
+            if not inventory.opened:
+                cell = int(world1.lst_objects["main_char"][1] + event.pos[0] - 640)//20, int(world1.lst_objects["main_char"][2] + event.pos[1] - 360)//20
+                if event.button == 1:
+                    world1.table[cell[1], cell[0]] = 0
+                elif event.button == 3:
+                    world1.table[cell[1], cell[0]] = inventory.equipped + 1
     # проверка на то что игрок стоит на земле или же в воздухе
     try:
         if world1.table[500 - int(main_char.y // 20) - 2][int(main_char.x // 20) + 500] != 0:
@@ -191,12 +207,13 @@ while running:
                 main_char.v_h = 0
         if world1.table[500 - int(main_char.y // 20)][int(main_char.x // 20) + 500] != 0:
             main_char.status = "on_ground"
+            if main_char.v_v < 0:
+                main_char.hp += int(main_char.v_v / 400)
+            if main_char.hp < 0:
+                main_char.hp = 0
             main_char.a_v = 0
             if main_char.direction[1] != 0:
                 main_char.v_v = 0
-            main_char.hp -= main_char.v_v // 40
-            if main_char.hp < 0:
-                main_char.hp = 0
         elif world1.table[500 - int(main_char.y // 20)][int(main_char.x // 20) + 500] == 0:
             main_char.status = "in_air"
             # его вертикальное ускорение = g
@@ -231,13 +248,11 @@ while running:
                 int(world1.lst_objects["main_char"][1] / 20) + (j - 33)]
             screen.blit(objects[cell], (int((j - 1)*20 - main_char.x % 20), int((i - 1)*20 + main_char.y % 20)))
     # отрисовка персонажа
-    screen.blit(button.image, button.rect)
     screen.blit(character, (w // 2 - ch_w // 2, h // 2 - ch_h // 2))
 
     inventory.draw(scren=screen)
     pygame.display.flip()
     # лог для проверки достоверности того что мы видем
-    print(clock.get_time(), main_char.y, main_char.x, main_char.v_v, main_char.v_h, main_char.a_v, main_char.status,
-          main_char.hp)
+    print(main_char.v_v)
     clock.tick(60)
 pygame.quit()
