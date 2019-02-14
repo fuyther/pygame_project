@@ -23,6 +23,11 @@ class Object(pygame.sprite.Sprite):
         self.a_h = 0
         self.a_v = 0
         self.v_h = 0
+        self.lst_values = []
+        self.lst_values.append(self.v_v)
+        self.lst_values.append(self.a_h)
+        self.lst_values.append(self.a_v)
+        self.lst_values.append(self.v_h)
         self.direction = [0, 0]
 
 
@@ -95,7 +100,7 @@ class Inventory:
 
 
 class Button(pygame.sprite.Sprite):
-    def __init__(self, text, direct, x ,y, screen):
+    def __init__(self, text, x ,y, screen):
         super().__init__(all_sprites)
         self.image = pygame.transform.scale(load_image("button.png"), (200, 50))
         font = pygame.font.Font(None, 30)
@@ -105,6 +110,34 @@ class Button(pygame.sprite.Sprite):
         self.image.blit(self.text_surface, ((self.rect.width - rect.width)//2, (self.rect.height - rect.height)//2))
         self.rect.x = x
         self.rect.y = y
+        self.screen = screen
+
+    def draw_(self):
+        self.screen.blit(self.image, self.rect)
+
+    def is_clicked(self, pos):
+        if self.rect.x < pos[0] < self.rect.x + self.rect.width\
+                and self.rect.y < pos[1] < self.rect.y + self.rect.height:
+            return True
+        else:
+            return False
+
+
+def pause(screen):
+    running = True
+    button_continue = Button("Continue", 540, 345, screen)
+    while running:
+        screen.fill(pygame.color.Color("grey"))
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return pygame.quit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                button_continue.is_clicked(event.pos)
+        button_continue.draw_()
+        pygame.display.flip()
 
 
 # создание мира
@@ -178,6 +211,8 @@ while running:
                     inventory.close()
                 else:
                     inventory.open()
+            elif event.key == pygame.K_ESCAPE:
+                pause(screen)
         if event.type == pygame.KEYUP:
             # при отжатии в горизонтальные переменные = 0
             if event.key == pygame.K_d:
@@ -249,7 +284,6 @@ while running:
             screen.blit(objects[cell], (int((j - 1)*20 - main_char.x % 20), int((i - 1)*20 + main_char.y % 20)))
     # отрисовка персонажа
     screen.blit(character, (w // 2 - ch_w // 2, h // 2 - ch_h // 2))
-
     inventory.draw(scren=screen)
     pygame.display.flip()
     # лог для проверки достоверности того что мы видем
